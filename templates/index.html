@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Coding Quiz</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        body {
+            margin: 0; padding: 16px; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            color: #f8fafc;
+            background-color: #071326;
+            background-image: url('/static/bg.jpeg');
+            background-size: contain;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+        .card {
+            width: 100%; max-width: 380px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 24px; border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        }
+        h1 { margin-top: 0; margin-bottom: 6px; font-size: 1.5rem; text-align: center; color: #38bdf8; }
+        .subtitle { text-align: center; font-size: 0.88rem; color: #94a3b8; margin-top: 0; margin-bottom: 18px; }
+        label { display: block; margin-top: 12px; font-size: 0.9rem; color: #cbd5e1; }
+        input {
+            width: 100%; padding: 10px 12px; margin-top: 6px; border-radius: 8px;
+            border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 0.95rem;
+        }
+        button {
+            width: 100%; margin-top: 18px; padding: 12px; border: none; border-radius: 8px;
+            background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 1rem; cursor: pointer;
+        }
+        .msg {
+            padding: 10px 12px; border-radius: 8px; margin-bottom: 12px;
+            background: #991b1b; border: 1px solid #f87171; font-size: 0.9rem;
+        }
+        .admin-link { text-align: center; margin-top: 16px; font-size: 0.85rem; }
+        .admin-link a { color: #94a3b8; text-decoration: none; }
+
+        @media (max-width: 640px) {
+            body {
+                background-position: top center;
+                align-items: flex-end;
+                padding-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Coding Quiz Portal</h1>
+        <p class="subtitle">Enter your secret quiz code to begin</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="msg">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label for="quiz_code">Secret Quiz Code</label>
+            <input type="text" id="quiz_code" name="quiz_code" placeholder="Enter Secret Code" required style="text-transform: uppercase;">
+
+            <label for="student_name">Your Full Name (or USN)</label>
+            <input type="text" id="student_name" name="student_name" placeholder="Enter your name" required>
+
+            <button type="submit">Join Quiz</button>
+        </form>
+
+        <div class="admin-link">
+            <a href="/admin">Admin Login →</a>
+        </div>
+    </div>
+</body>
+</html>

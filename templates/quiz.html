@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }}</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        body { margin: 0; padding: 16px; background: #0f172a; color: #f8fafc; }
+        .container { max-width: 720px; margin: 0 auto; }
+        .header {
+            background: #1e293b; padding: 16px 20px; border-radius: 12px;
+            margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+        }
+        .q-card {
+            background: #1e293b; padding: 20px; border-radius: 12px;
+            margin-bottom: 16px; border: 1px solid #334155;
+        }
+        .q-image {
+            max-width: 100%; height: auto; border-radius: 8px;
+            margin: 12px 0; border: 1px solid #475569; display: block;
+        }
+        pre {
+            background: #020617; color: #a5f3fc; padding: 12px; border-radius: 8px;
+            overflow-x: auto; font-family: monospace; font-size: 0.9rem;
+        }
+        .option {
+            display: flex; align-items: center; gap: 10px; padding: 12px;
+            margin-top: 8px; background: #0f172a; border-radius: 8px;
+            border: 1px solid #334155; cursor: pointer;
+        }
+        .option input { transform: scale(1.2); }
+        button {
+            width: 100%; padding: 14px; border: none; border-radius: 10px;
+            background: #22c55e; color: #052e16; font-weight: 700; font-size: 1.05rem; cursor: pointer;
+        }
+        .result-box {
+            text-align: center; background: #1e293b; padding: 36px 20px;
+            border-radius: 14px; margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if submitted %}
+            <div class="result-box">
+                <h2 style="color: #22c55e;">Quiz Submitted Successfully!</h2>
+                <p>Thank you, <strong>{{ student_name }}</strong>.</p>
+                <p style="color:#94a3b8; margin-bottom: 24px;">Your responses have been recorded and sent to the admin.</p>
+                <a href="/" style="color:#38bdf8;">Back to Home</a>
+            </div>
+        {% else %}
+            <div class="header">
+                <div><strong>{{ quiz.title }}</strong> ({{ quiz.code }})</div>
+                <div style="color:#38bdf8;">Student: {{ student_name }}</div>
+            </div>
+
+            {% if not questions %}
+                <div class="q-card">No questions uploaded for this quiz yet. Please wait for the admin.</div>
+            {% else %}
+                <form method="POST">
+                    {% for q in questions %}
+                        <div class="q-card">
+                            <div><strong>Q{{ loop.index }}.</strong> {{ q.question }}</div>
+                            {% if q.image_data %}
+                                <img class="q-image" src="{{ q.image_data }}" alt="Question {{ loop.index }} Diagram">
+                            {% endif %}
+                            {% if q.code_snippet %}
+                                <pre><code>{{ q.code_snippet }}</code></pre>
+                            {% endif %}
+                            {% for opt in q.options %}
+                                <label class="option">
+                                    <input type="radio" name="q_{{ q._id }}" value="{{ loop.index0 }}" required>
+                                    <span>{{ opt }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit">Submit Quiz</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>
