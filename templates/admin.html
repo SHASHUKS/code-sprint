@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Coding Quiz</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        body { margin: 0; padding: 16px; background: #0f172a; color: #f8fafc; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card {
+            background: #1e293b; padding: 20px; border-radius: 12px;
+            margin-bottom: 20px; border: 1px solid #334155;
+        }
+        h2, h3 { margin-top: 0; color: #38bdf8; }
+        label { font-size: 0.9rem; color: #cbd5e1; display: block; margin-top: 8px; }
+        input, textarea, select {
+            width: 100%; padding: 10px; margin: 6px 0 12px; border-radius: 8px;
+            border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 0.95rem;
+        }
+        button, .btn {
+            padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer;
+            background: #38bdf8; color: #0f172a; font-weight: 700; text-decoration: none; display: inline-block;
+        }
+        .btn-green { background: #22c55e; color: #052e16; }
+        .btn-secondary { background: #475569; color: #fff; }
+        .btn-danger { background: #ef4444; color: #fff; font-size: 0.85rem; padding: 6px 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+        .row-flex { display: flex; gap: 10px; align-items: center; }
+        .code-banner {
+            background: #064e3b; border: 1px solid #10b981; padding: 16px; border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .secret-code-text { font-size: 1.6rem; font-weight: 800; letter-spacing: 2px; color: #34d399; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; font-size: 0.9rem; }
+        th { color: #38bdf8; }
+        .msg { padding: 12px; border-radius: 8px; margin-bottom: 16px; background: #1e40af; font-weight: 500; }
+        details summary { cursor: pointer; color: #38bdf8; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if not logged_in %}
+            <div class="card" style="max-width: 380px; margin: 80px auto;">
+                <h2>Admin Login</h2>
+                {% with messages = get_flashed_messages() %}
+                    {% for msg in messages %}<div class="msg">{{ msg }}</div>{% endfor %}
+                {% endwith %}
+                <form method="POST">
+                    <label>Admin Password</label>
+                    <input type="password" name="admin_password" placeholder="Enter Admin Password" required>
+                    <button type="submit" style="width:100%;">Login</button>
+                </form>
+                <p style="text-align:center; margin-top:14px;"><a href="/" style="color:#94a3b8;">← Student Join Page</a></p>
+            </div>
+        {% else %}
+            <div class="topbar">
+                <h2 style="margin:0;">Admin Control Panel</h2>
+                <div class="row-flex">
+                    <a class="btn" href="/" target="_blank">Open Student View</a>
+                    <a class="btn btn-danger" href="/admin/logout" style="padding:10px 14px;">Logout</a>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+                {% for msg in messages %}<div class="msg">{{ msg }}</div>{% endfor %}
+            {% endwith %}
+
+            <!-- STEP 1: GENERATE SECRET CODE FOR ALL USERS -->
+            <div class="card">
+                <h3>Step 1: Generate Secret Code for All Students</h3>
+                <form method="POST" action="/admin/create_quiz">
+                    <div class="grid">
+                        <div>
+                            <label>Quiz Title</label>
+                            <input type="text" name="title" placeholder="e.g. Python Coding Quiz" required>
+                        </div>
+                        <div>
+                            <label>Secret Code (Click Auto-Generate or type your own)</label>
+                            <div class="row-flex">
+                                <input type="text" id="secretCodeInput" name="code" placeholder="Leave blank to auto-generate" style="text-transform:uppercase; margin:6px 0 12px;">
+                                <button type="button" class="btn-secondary" onclick="autoGenerateCode()" style="white-space:nowrap; margin-bottom:6px;">Auto-Generate</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-green">Generate & Activate Secret Code</button>
+                </form>
+            </div>
+
+            <!-- ACTIVE SECRET CODE BANNER -->
+            {% if selected_code %}
+                <div class="code-banner">
+                    <div>
+                        <div style="font-size:0.85rem; color:#a7f3d0;">ACTIVE SECRET CODE (SHARE WITH ALL 50 STUDENTS)</div>
+                        <div class="secret-code-text" id="activeCode">{{ selected_code }}</div>
+                    </div>
+                    <div class="row-flex">
+                        <button type="button" class="btn-green" onclick="copyActiveCode()">Copy Code</button>
+                        {% if quizzes|length > 1 %}
+                            <form method="GET" action="/admin" style="margin:0;">
+                                <select name="code" onchange="this.form.submit()" style="margin:0; width:auto;">
+                                    {% for qz in quizzes %}
+                                        <option value="{{ qz.code }}" {% if qz.code == selected_code %}selected{% endif %}>
+                                            {{ qz.code }} — {{ qz.title }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- STEP 2: UPLOAD QUESTIONS AND ANSWERS -->
+            <div class="card">
+                <h3>Step 2: Upload Questions & Answers {% if selected_code %}(Code: {{ selected_code }}){% endif %}</h3>
+                {% if not selected_code %}
+                    <p style="color:#fbbf24;">Generate a Secret Code in <strong>Step 1</strong> above first, then upload your questions here.</p>
+                {% else %}
+                    <form method="POST" action="/admin/add_question">
+                        <input type="hidden" name="quiz_code" value="{{ selected_code }}">
+
+                        <label>Question</label>
+                        <textarea name="question" rows="2" placeholder="Enter your coding question..." required></textarea>
+
+                        <label>Code Snippet (Optional)</label>
+                        <textarea name="code_snippet" rows="3" placeholder="Paste Python / C / Java code here..." style="font-family:monospace;"></textarea>
+
+                        <label>Answer Options</label>
+                        <div class="grid">
+                            <input type="text" name="opt0" placeholder="Option A" required>
+                            <input type="text" name="opt1" placeholder="Option B" required>
+                            <input type="text" name="opt2" placeholder="Option C" required>
+                            <input type="text" name="opt3" placeholder="Option D" required>
+                        </div>
+
+                        <label>Select Correct Answer</label>
+                        <select name="correct_option">
+                            <option value="0">Option A</option>
+                            <option value="1">Option B</option>
+                            <option value="2">Option C</option>
+                            <option value="3">Option D</option>
+                        </select>
+
+                        <button type="submit">Upload Question & Answer</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            {% if selected_code %}
+                <!-- STEP 3: LIVE STUDENT RESULTS -->
+                <div class="card">
+                    <div class="topbar" style="margin-bottom:8px;">
+                        <h3 style="margin:0;">Step 3: All Student Results ({{ submissions|length }} Submitted)</h3>
+                        <a class="btn" href="/admin?code={{ selected_code }}">Refresh Results</a>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Student Name</th>
+                                    <th>Score</th>
+                                    <th>Submitted At</th>
+                                    <th>Answer Breakdown</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sub in submissions %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><strong>{{ sub.student_name }}</strong></td>
+                                        <td>{{ sub.score }} / {{ sub.total }}</td>
+                                        <td>{{ sub.submitted_at }}</td>
+                                        <td>
+                                            <details>
+                                                <summary>View Answers</summary>
+                                                <ul style="padding-left:18px; margin:8px 0;">
+                                                    {% for ans in sub.answers %}
+                                                        <li>
+                                                            {{ ans.question }} —
+                                                            <strong>{{ ans.selected_option }}</strong>
+                                                            {% if ans.is_correct %}✅{% else %}❌ (Ans: {{ ans.correct_option }}){% endif %}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="5" style="color:#94a3b8;">No students have submitted yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- UPLOADED QUESTIONS LIST -->
+                <div class="card">
+                    <h3>Uploaded Questions ({{ questions|length }})</h3>
+                    {% for q in questions %}
+                        <div style="padding:10px 0; border-bottom:1px solid #334155; display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                            <div>
+                                <strong>Q{{ loop.index }}:</strong> {{ q.question }}<br>
+                                <small style="color:#22c55e;">Correct Answer: {{ q.options[q.correct_option] }}</small>
+                            </div>
+                            <a class="btn btn-danger" href="/admin/delete_question/{{ q._id }}?code={{ selected_code }}">Delete</a>
+                        </div>
+                    {% else %}
+                        <p style="color:#94a3b8;">No questions uploaded yet.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script>
+        function autoGenerateCode() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let code = "";
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById("secretCodeInput").value = code;
+        }
+
+        function copyActiveCode() {
+            const code = document.getElementById("activeCode").innerText;
+            navigator.clipboard.writeText(code);
+            alert("Copied secret code: " + code);
+        }
+    </script>
+</body>
+</html>
